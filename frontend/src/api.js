@@ -8,8 +8,17 @@ const api = axios.create({
   baseURL,
 });
 
+const authFreePaths = ['/auth/register/', '/auth/token/', '/auth/token/refresh/'];
+
 api.interceptors.request.use(
   (config) => {
+    const requestPath = config.url || '';
+    const skipAuthHeader = authFreePaths.some((path) => requestPath.startsWith(path));
+
+    if (skipAuthHeader) {
+      return config;
+    }
+
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

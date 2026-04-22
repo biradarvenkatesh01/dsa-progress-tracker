@@ -39,6 +39,7 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    localStorage.removeItem('token');
 
     if (form.password !== form.confirmPassword) {
       setError('Passwords do not match.');

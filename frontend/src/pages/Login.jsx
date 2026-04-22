@@ -38,6 +38,7 @@ function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    localStorage.removeItem('token');
 
     try {
       const response = await api.post('/auth/token/', {
