@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'https://dsa-tracker-backend-1gm3.onrender.com',
 });
 
 api.interceptors.request.use(
