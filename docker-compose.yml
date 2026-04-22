@@ -10,10 +10,17 @@ services:
       SECRET_KEY: docker-dev-secret-key-change-in-prod
       DEBUG: "True"
       ALLOWED_HOSTS: localhost,127.0.0.1,backend
+    restart: unless-stopped
     volumes:
       - ./backend:/app
     working_dir: /app
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    healthcheck:
+      test: ["CMD", "python", "manage.py", "check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   frontend:
     build:
@@ -24,10 +31,14 @@ services:
       - "3000:3000"
     environment:
       REACT_APP_API_BASE_URL: http://localhost:8000/api
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    restart: unless-stopped
     volumes:
       - ./frontend:/app
       - /app/node_modules
     working_dir: /app
     command: npm start
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy

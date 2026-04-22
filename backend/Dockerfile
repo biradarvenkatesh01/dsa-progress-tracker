@@ -5,7 +5,8 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir \
+RUN python -m pip install --upgrade pip && \
+    pip install --no-cache-dir \
     django==5.2.7 \
     djangorestframework==3.16.1 \
     djangorestframework-simplejwt==5.5.1 \
@@ -18,4 +19,4 @@ COPY . /app
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
