@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const rawBaseUrl =
+  process.env.REACT_APP_API_BASE_URL || 'https://dsa-tracker-backend-1gm3.onrender.com/api';
+const baseURL = rawBaseUrl.replace(/\/+$/, '');
+
 const api = axios.create({
-  baseURL: 'https://dsa-tracker-backend-1gm3.onrender.com',
+  baseURL,
 });
 
 api.interceptors.request.use(
