@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import Count, Q
-from rest_framework import status, viewsets
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -12,9 +12,14 @@ from .serializers import ProblemSerializer, TopicSerializer
 
 
 class TopicViewSet(viewsets.ModelViewSet):
-    queryset = Topic.objects.all()
     serializer_class = TopicSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Topic.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 class ProblemViewSet(viewsets.ModelViewSet):
@@ -22,7 +27,7 @@ class ProblemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Problem.objects.select_related("topic").all()
+        queryset = Problem.objects.select_related("topic").filter(owner=self.request.user)
 
         topic_id = self.request.query_params.get("topic")
         difficulty = self.request.query_params.get("difficulty")
@@ -39,6 +44,22 @@ class ProblemViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(is_solved=False)
 
         return queryset
+
+    def perform_create(self, serializer):
+        topic = serializer.validated_data["topic"]
+        if topic.owner_id != self.request.user.id:
+            raise serializers.ValidationError(
+                {"topic": "Invalid topic selected for this user."}
+            )
+        serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        topic = serializer.validated_data.get("topic")
+        if topic and topic.owner_id != self.request.user.id:
+            raise serializers.ValidationError(
+                {"topic": "Invalid topic selected for this user."}
+            )
+        serializer.save()
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -90,16 +111,19 @@ def register_user(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def progress_stats(request):
-    total_topics = Topic.objects.count()
-    total_problems = Problem.objects.count()
-    solved_problems = Problem.objects.filter(is_solved=True).count()
+    user_topics = Topic.objects.filter(owner=request.user)
+    user_problems = Problem.objects.filter(owner=request.user)
+
+    total_topics = user_topics.count()
+    total_problems = user_problems.count()
+    solved_problems = user_problems.filter(is_solved=True).count()
     unsolved_problems = total_problems - solved_problems
 
     solved_percentage = (
         round((solved_problems / total_problems) * 100, 2) if total_problems else 0
     )
 
-    by_difficulty = Problem.objects.values("difficulty").annotate(
+    by_difficulty = user_problems.values("difficulty").annotate(
         total=Count("id"),
         solved=Count("id", filter=Q(is_solved=True)),
     )
@@ -117,7 +141,7 @@ def progress_stats(request):
             "unsolved": total - solved,
         }
 
-    topics_breakdown = Topic.objects.annotate(
+    topics_breakdown = user_topics.annotate(
         total_problems=Count("problems"),
         solved_problems=Count("problems", filter=Q(problems__is_solved=True)),
     ).values("id", "name", "total_problems", "solved_problems")

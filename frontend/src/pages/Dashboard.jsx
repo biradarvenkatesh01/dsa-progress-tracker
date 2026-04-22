@@ -189,15 +189,10 @@ function Dashboard() {
       setTopics((prev) => [...prev, { ...response.data, problems: response.data?.problems || [] }]);
       setNewTopicName('');
       setShowModal(false);
-    } catch {
-      const localTopic = {
-        id: Date.now(),
-        name: newTopicName.trim(),
-        problems: [],
-      };
-      setTopics((prev) => [...prev, localTopic]);
-      setNewTopicName('');
-      setShowModal(false);
+    } catch (err) {
+      const message =
+        err.response?.data?.detail || err.response?.data?.message || 'Could not add topic.';
+      setError(message);
     }
   };
 
@@ -226,19 +221,10 @@ function Dashboard() {
             : topic
         )
       );
-    } catch {
-      const fallbackProblem = {
-        id: Date.now(),
-        title: entry.title.trim(),
-        leetcode_url: normalizeExternalUrl(entry.leetcodeUrl),
-        difficulty: entry.difficulty,
-        solved: false,
-      };
-      setTopics((prev) =>
-        prev.map((topic) =>
-          topic.id === topicId ? { ...topic, problems: [...(topic.problems || []), fallbackProblem] } : topic
-        )
-      );
+    } catch (err) {
+      const message =
+        err.response?.data?.detail || err.response?.data?.message || 'Could not add problem.';
+      setError(message);
     } finally {
       setNewProblems((prev) => ({
         ...prev,

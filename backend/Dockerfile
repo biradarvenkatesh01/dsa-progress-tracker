@@ -5,8 +5,14 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir \
+    django==5.2.7 \
+    djangorestframework==3.16.1 \
+    djangorestframework-simplejwt==5.5.1 \
+    django-cors-headers==4.9.0 \
+    python-dotenv==1.1.1 \
+    gunicorn==23.0.0 \
+    psycopg2-binary==2.9.10
 
 COPY . /app
 
